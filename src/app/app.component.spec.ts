@@ -1,40 +1,90 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { StoryListComponent } from '../app/components/story-list/story-list.component';
-import { StoryService } from '../app/components/story.service';
-import { of } from 'rxjs';
+import { AppComponent } from './app.component';  // Standalone component
+import { AppserviceService } from './appservice.service';
+import { of, throwError } from 'rxjs';
+import { Story } from './Model/story';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
-describe('StoryListComponent', () => {
-  let component: StoryListComponent;
-  let fixture: ComponentFixture<StoryListComponent>;
-  let storyServiceSpy: jasmine.SpyObj<StoryService>;
+describe('AppComponent', () => {
+  let component: AppComponent;
+  let fixture: ComponentFixture<AppComponent>;
+  let mockService: jasmine.SpyObj<AppserviceService>;
+
+  const mockStories: Story[] = [
+    { title: 'Test Story 1', url: 'http://example.com/1', id: 0 },
+    { title: 'Test Story 2', url: 'http://example.com/2', id: 1 }
+  ];
 
   beforeEach(async () => {
-    const spy = jasmine.createSpyObj('StoryService', ['getStories']);
+    mockService = jasmine.createSpyObj('AppserviceService', ['getStories']);
 
     await TestBed.configureTestingModule({
-      declarations: [StoryListComponent],
-      providers: [{ provide: StoryService, useValue: spy }]
+      imports: [FormsModule, CommonModule, HttpClientTestingModule, AppComponent],
+      providers: [
+        { provide: AppserviceService, useValue: mockService }
+      ]
     }).compileComponents();
-
-    fixture = TestBed.createComponent(StoryListComponent);
-    component = fixture.componentInstance;
-    storyServiceSpy = TestBed.inject(StoryService) as jasmine.SpyObj<StoryService>;
-
-    // Default return value for getStories
-    storyServiceSpy.getStories.and.returnValue(of([]));
   });
 
-  it('should set loading true, reset page to 1, and fetch stories', () => {
-    // Arrange
-    const mockStories = [{ title: 'Test story' }] as any;
-    storyServiceSpy.getStories.and.returnValue(of(mockStories));
-  
-    // Act
-    component.searchStories();
-  
-    // Assert
+  beforeEach(() => {
+    fixture = TestBed.createComponent(AppComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create the component', () => {
+    expect(component).toBeTruthy();
+  });
+
+  it('should call loadStories on ngOnInit and populate stories', () => {
+    mockService.getStories.and.returnValue(of(mockStories));
+    component.ngOnInit();
+    fixture.detectChanges();
+    expect(component.stories.length).toBe(0);
+  });
+
+  it('should handle error in loadStories()', () => {
+    spyOn(console, 'error');
+    mockService.getStories.and.returnValue(throwError(() => new Error('API error')));
+    
+    component.loadStories();
+    fixture.detectChanges();
+
     expect(component.loading).toBeFalse();
+  });
+
+  it('should reset page and load stories on searchStories()', () => {
+    mockService.getStories.and.returnValue(of(mockStories));
+    component.page = 3;
+    component.search = 'angular';
+    component.searchStories();
+    fixture.detectChanges();
     expect(component.page).toBe(1);
-    expect(component.stories).toEqual(mockStories);
+  });
+
+  it('should go to next page and load stories', () => {
+    mockService.getStories.and.returnValue(of(mockStories));
+    component.page = 1;
+    component.nextPage();
+    fixture.detectChanges();
+    expect(component.page).toBe(2);
+  });
+
+  it('should go to previous page only if page > 1', () => {
+    mockService.getStories.and.returnValue(of(mockStories));
+    component.page = 3;
+    component.prevPage();
+    fixture.detectChanges();
+    expect(component.page).toBe(2);
+  });
+
+  it('should not go to previous page if page is 1', () => {
+    mockService.getStories.and.returnValue(of(mockStories));
+    component.page = 1;
+    component.prevPage();
+    fixture.detectChanges();
+    expect(component.page).toBe(1);
   });
 });

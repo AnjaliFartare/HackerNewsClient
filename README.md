@@ -1,6 +1,6 @@
 ## HackerNews Client
 
-This Angular application displays the top 200 Hacker News stories using data served by the ASP.NET Core Web API.
+This Angular application displays the Hacker News stories using data served by the ASP.NET Core Web API.
 
 ---
 ## Prerequisites

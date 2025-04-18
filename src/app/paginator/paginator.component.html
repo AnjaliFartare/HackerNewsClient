@@ -1,0 +1,13 @@
+<nav *ngIf="totalPages > 1" class="d-flex justify-content-center">
+    <ul class="pagination">
+        <li class="page-item" [class.disabled]="page === 1">
+            <button class="page-link" (click)="prev.emit()">Previous</button>
+        </li>
+        <li *ngFor="let p of pages()" class="page-item" [class.active]="p === page">
+            <button class="page-link" (click)="goToPage.emit(p)">{{ p }}</button>
+        </li>
+        <li class="page-item" [class.disabled]="page === totalPages">
+            <button class="page-link" (click)="next.emit()">Next</button>
+        </li>
+    </ul>
+</nav>
